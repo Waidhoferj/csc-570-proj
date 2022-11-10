@@ -85,6 +85,7 @@ def format_course_prefixes(prefix_str: str):
     # Returns a list of course prefixes
     formatted_prefixes = []
 
+
     # one course listed
     if "/" not in prefix_str:
         formatted_prefixes.append(prefix_str.replace(" ", "-"))
@@ -93,20 +94,21 @@ def format_course_prefixes(prefix_str: str):
     # multiple courses
     split_prefixes = re.split('/| ', prefix_str)
 
-    # crosslisted courses with different numbers (HNRS 304/ISLA 303)
-    if (len(split_prefixes) % 2 == 0):
-        prefixes = (prefix_str.split("/"))
-        for prefix in prefixes:
-            formatted_prefixes.append(prefix.replace(" ", "-"))
+    course_number_count = len([e for e in split_prefixes if e.isdigit()])
+
+    if course_number_count == 1:
+        # crosslisted courses with different depts, same number (HIST/HNRS 335)
+        course_num = split_prefixes[-1]
+        for prefix in split_prefixes[:-1]:
+            formatted_prefixes.append(f'{prefix}-{course_num}')
         return formatted_prefixes
     else:
-        # crosslisted courses with different depts, same number (HIST/HNRS 335)
-        prefixes, course_num = prefix_str.split(" ")
-        prefixes = prefixes.split("/")
-        for prefix in prefixes:
+    # crosslisted courses with different numbers (HNRS 304/ISLA 303)
+        for i in range(0,len(split_prefixes)-1,2):
+            prefix = split_prefixes[i]
+            course_num = split_prefixes[i+1]
             formatted_prefixes.append(f'{prefix}-{course_num}')
-    return formatted_prefixes
-
+        return formatted_prefixes
 
 def build_course_program_dict():
     df = pd.read_csv("program_courses.csv")
