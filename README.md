@@ -1,28 +1,14 @@
-# csc-570-proj
+# Find My Major
 
-## Python Packages Needed
+A tool for matching student interests to areas of study.
 
-Data Structures
+## Getting Started
 
-- numpy
-- pandas
+1. Set up python environment:
 
-Web Scraping
+```
+conda env create --file environment.yml
+conda activate csc-570
+```
 
-- BeautifulSoup
-
-Corpus Processing
-
-- NLTK
-- unidecode
-- Scikit-learn
-
-Visualization and Analysis
-
-- matplotlib
-- seaborn
-- wordcloud
-
-Decision Tool CLI (program_decision_support.py)
-
-- inquirer
+2. Check out the working example in `test.ipynb`

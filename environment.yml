@@ -1,0 +1,21 @@
+name: csc-570
+channels:
+  - anaconda
+  - conda-forge
+dependencies:
+  - python=3.10
+  - torchaudio
+  - pytorch
+  - torchvision
+  - matplotlib
+  - numpy
+  - spacy
+  - pandas
+  - transformers
+  - ipykernel
+  - scikit-learn
+  - beautifulsoup4
+  - nltk
+  - request
+  - seaborn
+  - wordcloud
