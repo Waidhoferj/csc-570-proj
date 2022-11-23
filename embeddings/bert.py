@@ -2,7 +2,8 @@ import torch
 from transformers import BertModel, BertTokenizer
 from sklearn.base import BaseEstimator, TransformerMixin
 import numpy as np
-
+import pandas as pd
+from sklearn.neighbors import KNeighborsClassifier
 class BertSentenceEmbedder(BaseEstimator, TransformerMixin):
     def __init__(self, device="cpu",padding_length=50):
         """
@@ -30,7 +31,7 @@ class BertSentenceEmbedder(BaseEstimator, TransformerMixin):
             X, 
             return_token_type_ids=False, 
             return_attention_mask=False,
-            padding="max_length",
+            padding=True,
             truncation=True,
             max_length=self._padding_length,
             return_tensors="pt"
@@ -48,11 +49,17 @@ class BertSentenceEmbedder(BaseEstimator, TransformerMixin):
 
 
 if __name__ == "__main__":
-    X = [
-        "Hello, my name is John.",
-        "What's going on my dudes?"
-    ]
+    df = pd.read_csv("course_sentences.csv")
+    embedder = BertSentenceEmbedder("mps", padding_length=1000)
+    embeddings = embedder.transform(list(df["sentence"]))
+    labels = df["program"]
+    classifier = KNeighborsClassifier(n_neighbors=10)
+    classifier.fit(embeddings, labels)
+    num_suggestions = 10
 
-    embedder = BertSentenceEmbedder("mps")
-    out = embedder.transform(X)
-    print(out.shape)
+    prompt = "Covers methods currently available to address complexity, including systems thinking, model based systems engineering and life cycle governance."
+    embedding = embedder.transform([prompt])
+    probs = classifier.predict_proba(embedding)[0]
+    idx = np.argsort(-probs)[:num_suggestions]
+    label_map = np.array(sorted(set(labels)))
+    print(prompt, label_map[idx], probs[idx])
