@@ -30,13 +30,19 @@ if __name__ == "__main__":
 
         course_description = course_row["Description"].values[0]
         sentences = sent_tokenize(course_description)
-        # filter out common sentences
         sentences = [sentence.strip() for sentence in sentences if is_valid_sentence(sentence)]
         
-        for program in programs:
+
+        # if a course belongs to more than one program, use the department as the program
+        if len(programs) > 1:
+            dept = course_row["Dept"].values[0]
             for sentence in sentences:
-                rows.append([sentence, course, program])
+                rows.append([sentence, course, dept])
+            continue
+        else:
+            for program in programs:
+                for sentence in sentences:
+                    rows.append([sentence, course, program])
 
     output_df = pd.DataFrame(rows, columns=["sentence", "course", "program"])
-    output_df = output_df.drop_duplicates(subset=['sentence'])
     output_df.to_csv(OUTPUT_FILE, index=False)
