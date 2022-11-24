@@ -49,5 +49,5 @@ def get_recommendations(probs:np.ndarray, labels:List[str], n=5) -> List[List[st
         Top labels based on a probability distribution
     """
     np_labels = np.array(labels)
-    return np_labels[probs.argsort(-1)[:,:n]]
+    return np_labels[(-probs).argsort(-1)[:,:n]]
 
