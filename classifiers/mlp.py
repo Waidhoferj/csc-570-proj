@@ -9,12 +9,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
 
 
-class ProgramClassifier(BaseEstimator, ClassifierMixin):
-    def __init__(self, device="cpu", seed=42):
+class MajorMlpClassifier(BaseEstimator, ClassifierMixin):
+    def __init__(self, device="cpu", seed=42, epochs=200, patience:int=None):
         super().__init__()
         self.device = device
         self.seed = seed
         self.model = None
+        self.epochs = epochs
+        self.patience = patience if patience is not None else epochs
 
 
     def _preprocess_features(self, X: np.ndarray) -> np.ndarray:
@@ -43,14 +45,14 @@ class ProgramClassifier(BaseEstimator, ClassifierMixin):
         class_weights = torch.from_numpy(class_weights).to(self.device)
         X, y = self._preprocess_features(X), self._preprocess_labels(y)
         x_train, x_val, y_train, y_val = train_test_split(X, y, test_size=0.1, random_state=self.seed, shuffle=True)
-        should_stop = EarlyStopping(1)
+        should_stop = EarlyStopping(self.patience)
         val_loss = np.inf
         model = ProgramClassifierNetwork(x_train.shape[1], y_train.shape[1])
         model = model.to(self.device)
         optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
         criterion = nn.CrossEntropyLoss(weight=class_weights)
-
-        while not should_stop.step(val_loss):
+        epoch = 0
+        while not should_stop.step(val_loss) and epoch < self.epochs:
             preds = model(x_train)
             loss = criterion(preds, y_train)
             optimizer.zero_grad()
@@ -58,11 +60,18 @@ class ProgramClassifier(BaseEstimator, ClassifierMixin):
             optimizer.step()
             with torch.no_grad():
                 val_preds = model(x_val)
-                val_loss = F.cross_entropy(val_preds, y_val).item()
+                val_loss = criterion(val_preds, y_val).item()
+            epoch += 1
         model.eval()
         self.model = model
 
-
+    def predict_proba(self, X:np.ndarray) -> np.ndarray:
+        X = self._preprocess_features(X)
+        if self.model is None:
+            raise Exception("Train model with fit() before predicting.")
+        with torch.no_grad():
+            logits = self.model(X)
+            return F.softmax(logits, dim=-1).cpu().numpy()
     
     def predict(self, X:np.ndarray) -> List[str]:
         """
@@ -71,12 +80,7 @@ class ProgramClassifier(BaseEstimator, ClassifierMixin):
         Returns:
             predicted classes for each embedding
         """
-        X = self._preprocess_features(X)
-        if self.model is None:
-            raise Exception("Train model with fit() before predicting.")
-        with torch.no_grad():
-            preds = self.model(X)
-            pred_i = F.softmax(preds, dim=-1).argmax(-1).cpu().numpy()
+        pred_i = self.predict_proba(X).argmax(-1)
         return self._class_names[pred_i]
 
         
@@ -86,13 +90,13 @@ class ProgramClassifierNetwork(nn.Module):
     def __init__(self, input_size, n_classes) -> None:
         super().__init__()
         self.classifier = nn.Sequential(
+            nn.BatchNorm1d(input_size),
             nn.Linear(input_size, 512),
             nn.ReLU(),
             nn.Linear(512, 256),
             nn.ReLU(),
             nn.Linear(256, 128),
             nn.ReLU(),
-            nn.Dropout(),
             nn.Linear(128, n_classes),
         )
 
