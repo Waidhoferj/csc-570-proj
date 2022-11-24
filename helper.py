@@ -2,6 +2,8 @@ import re
 import pandas as pd
 import numpy as np
 from typing import Tuple, List
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 PROGRAM = "Program"
 
@@ -28,6 +30,14 @@ def load_data(num_majors=20) -> Tuple[List[str], np.ndarray]:
     labels = np.array(df["program"])
 
     return sentences, labels
+
+def plot_confusion_matrix(y_true:List[str], y_pred:List[str], classes:List[str]):
+    """Plots a confusion matrix"""
+    cm = confusion_matrix(y_true, y_pred, labels=classes)
+    cm_df=pd.DataFrame(data=cm, index=classes, columns=classes)
+    sns.heatmap(cm_df, annot=True)
+    
+
 
 def get_recommendations(probs:np.ndarray, labels:List[str], n=5) -> List[List[str]]:
     """

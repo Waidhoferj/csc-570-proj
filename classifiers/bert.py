@@ -58,7 +58,7 @@ class BertClassifier(BaseEstimator, ClassifierMixin):
         model = AutoModelForSequenceClassification.from_pretrained(
             "distilbert-base-uncased", num_labels=len(labels), id2label=id2label, label2id=label2id
         ).to(self.device)
-        weights_path="weights/program_classifier"
+        weights_path="weights/bert_classifier"
         training_args = TrainingArguments(
             output_dir=weights_path,
             learning_rate=2e-5,
