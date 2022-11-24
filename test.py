@@ -52,7 +52,10 @@ def evaluate(load_weights=True):
     
 
 
-def test():
+def demo():
+    """
+    Interact with a model on the command line.
+    """
     bert_classifier = BertClassifier(weight_path="./weights/program_classifier/checkpoint-3400")
 
     while True:
@@ -67,4 +70,4 @@ def test():
 
 
 if __name__ == "__main__":
-    evaluate()
+    demo()
