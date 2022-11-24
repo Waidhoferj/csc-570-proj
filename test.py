@@ -7,7 +7,10 @@ import pandas as pd
 import numpy as np
 from typing import Tuple
 from sklearn.model_selection import train_test_split, cross_val_score
-from helper import load_data, get_recommendations
+from sklearn.metrics import classification_report
+from helper import load_data, get_recommendations, plot_confusion_matrix
+import matplotlib.pyplot as plt
+import os
 
 device = "mps"
 
@@ -15,6 +18,7 @@ def evaluate(load_weights=True):
     """
     Performs basic train/test split evaluation. 
     """
+    os.makedirs("figures", exist_ok=True)
     sentences, labels = load_data()
     embedder = BertSentenceEmbedder(device, padding_length=1000)
     
@@ -30,15 +34,19 @@ def evaluate(load_weights=True):
         bert_classifier.fit(x_train,y_train)
     mlp.fit(train_embeddings,y_train)
     sklearn_mlp.fit(train_embeddings, y_train)
+    classes = bert_classifier.labels
 
-    preds = bert_classifier.predict(x_test)
-    print("Bert classifier accuracy:", np.mean(np.array(preds) == np.array(y_test)))
+    def report(name, classifier, x,y):
+        preds = classifier.predict(x)
+        print(name)
+        print(classification_report(y, preds))
+        plot_confusion_matrix(y,preds, classes)
+        plt.savefig(f"figures/{name}_cm.png")
+        plt.clf()
 
-    preds = sklearn_mlp.predict(test_embeddings)
-    print("Sklearn mlp accuracy:", np.mean(np.array(preds) == np.array(y_test)))
-
-    preds = mlp.predict(test_embeddings)
-    print("Major mlp accuracy:", np.mean(np.array(preds) == np.array(y_test)))
+    report("bert_classifier",bert_classifier, x_test, y_test)
+    report("sklearn_mlp",sklearn_mlp, test_embeddings, y_test)
+    report("major_mlp",mlp, test_embeddings, y_test)
 
     
     
@@ -59,4 +67,4 @@ def test():
 
 
 if __name__ == "__main__":
-    test()
+    evaluate()
