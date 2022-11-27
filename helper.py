@@ -19,13 +19,17 @@ def get_num_courses_per_program():
     return df.groupby([PROGRAM])[PROGRAM].count()
 
 
-def load_data(num_majors=20) -> Tuple[List[str], np.ndarray]:
+def load_data(num_majors=20, include_majors=[]) -> Tuple[List[str], np.ndarray]:
     """
     Loads and preprocesses `course_sentences` data.
     """
-    df = pd.read_csv("course_sentences.csv")
-    top_majors = df.groupby("program").count().sort_values(by=["sentence"], ascending=False).head(num_majors).index
-    df = df[df["program"].isin(top_majors)]
+    courses = pd.read_csv("course_sentences.csv").drop(["course"], axis=1).dropna()
+    descriptions = pd.read_csv("program_descriptions.csv").rename(columns={"description": "sentence"}).dropna()
+    df = pd.concat([courses, descriptions], axis=0, ignore_index=True)
+    majors = list(df.groupby("program").count().sort_values(by=["sentence"], ascending=False).index)
+    majors = include_majors + majors
+    majors = majors[:num_majors]
+    df = df[df["program"].isin(majors)]
     sentences = list(df["sentence"])
     labels = np.array(df["program"])
 

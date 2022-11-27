@@ -20,3 +20,4 @@ dependencies:
   - seaborn
   - wordcloud
   - gensim
+  - Flask
