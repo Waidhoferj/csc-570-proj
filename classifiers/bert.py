@@ -41,7 +41,7 @@ class BertClassifier(BaseEstimator, ClassifierMixin):
 
 
 
-    def load_weights(self, path:str) -> AutoModelForSequenceClassification:
+    def load_weights(self, path:str):
         self.model = AutoModelForSequenceClassification.from_pretrained(
             path).to(self.device)
         self.labels = list(self.model.config.label2id.keys())
