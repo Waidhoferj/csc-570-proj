@@ -19,33 +19,43 @@ def evaluate(load_weights=True):
     Performs basic train/test split evaluation. 
     """
     os.makedirs("figures", exist_ok=True)
-    sentences, labels = load_data()
+    sentences, labels = load_data(num_majors=40)
     embedder = BertSentenceEmbedder(device, padding_length=1000)
     
     seed = 2
-    x_train, x_test, y_train,y_test = train_test_split(sentences, labels, random_state=seed, shuffle=True)
+    x_train, x_test, y_train,y_test = train_test_split(sentences, labels, random_state=seed, shuffle=True, train_size=0.8)
     train_embeddings = embedder.transform(x_train)
     test_embeddings = embedder.transform(x_test)
-    sklearn_mlp = MLPClassifier([512,256,128])
+    knn = KNeighborsClassifier()
     mlp = MajorMlpClassifier(device)
-    bert_classifier = BertClassifier(device=device, weight_path="./weights/program_classifier/checkpoint-3400"if load_weights else None)
+    bert_classifier = BertClassifier(
+        device=device,
+        epochs=25, 
+        )
 
-    if not load_weights:
+    
+    if load_weights:
+        mlp.load_weights("weights/major_classifier")
+        bert_classifier.load_weights("weights/bert_classifier_deployment_weights")
+    else:
         bert_classifier.fit(x_train,y_train)
-    mlp.fit(train_embeddings,y_train)
-    sklearn_mlp.fit(train_embeddings, y_train)
-    classes = bert_classifier.labels
+        mlp.fit(train_embeddings,y_train)
+    knn.fit(train_embeddings, y_train)
+    class_labels = np.array(bert_classifier.labels)
 
-    def report(name, classifier, x,y):
-        preds = classifier.predict(x)
+    def report(name, classifier, x,y, n=3):
+        probs = classifier.predict_proba(x)
+        ordered_choices = class_labels[(-probs).argsort(-1)[:,:n]]
+        preds = ordered_choices[:,0]
         print(name)
+        print(f"Top {n} accuracy", np.mean([label in choices for label, choices in zip(y, ordered_choices)]))
         print(classification_report(y, preds))
-        plot_confusion_matrix(y,preds, classes)
+        plot_confusion_matrix(y,preds, class_labels)
         plt.savefig(f"figures/{name}_cm.png")
         plt.clf()
 
     report("bert_classifier",bert_classifier, x_test, y_test)
-    report("sklearn_mlp",sklearn_mlp, test_embeddings, y_test)
+    report("KNN",knn, test_embeddings, y_test)
     report("major_mlp",mlp, test_embeddings, y_test)
 
     
@@ -56,7 +66,7 @@ def demo():
     """
     Interact with a model on the command line.
     """
-    bert_classifier = BertClassifier(weight_path="./weights/program_classifier/checkpoint-3400")
+    bert_classifier = BertClassifier(weight_path="./weights/bert_classifier/bert_classifier_weights")
 
     while True:
         command = input("Describe your ideal major: ")
@@ -70,4 +80,4 @@ def demo():
 
 
 if __name__ == "__main__":
-    demo()
+    evaluate(load_weights=True)

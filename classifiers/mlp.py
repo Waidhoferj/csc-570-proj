@@ -7,7 +7,8 @@ from typing import List, Tuple
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
-
+import json
+import os
 
 class MajorMlpClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, device="cpu", seed=42, epochs=200, patience:int=None):
@@ -17,6 +18,7 @@ class MajorMlpClassifier(BaseEstimator, ClassifierMixin):
         self.model = None
         self.epochs = epochs
         self.patience = patience if patience is not None else epochs
+        self.class_labels = None
 
 
     def _preprocess_features(self, X: np.ndarray) -> np.ndarray:
@@ -40,8 +42,8 @@ class MajorMlpClassifier(BaseEstimator, ClassifierMixin):
             X: embeddings of shape (n_sentences, embedding_size)
             y: program labels that match with each sentence
         """
-        self._class_names = np.array(self._get_classes(y))
-        class_weights = compute_class_weight("balanced", classes=self._class_names, y=y).astype("float32")
+        self.class_labels = np.array(self._get_classes(y))
+        class_weights = compute_class_weight("balanced", classes=self.class_labels, y=y).astype("float32")
         class_weights = torch.from_numpy(class_weights).to(self.device)
         X, y = self._preprocess_features(X), self._preprocess_labels(y)
         x_train, x_val, y_train, y_val = train_test_split(X, y, test_size=0.1, random_state=self.seed, shuffle=True)
@@ -81,14 +83,48 @@ class MajorMlpClassifier(BaseEstimator, ClassifierMixin):
             predicted classes for each embedding
         """
         pred_i = self.predict_proba(X).argmax(-1)
-        return self._class_names[pred_i]
+        return self.class_labels[pred_i]
+
+    def save_weights(self,path:str):
+        os.makedirs(path, exist_ok=True)
+        weights_path = os.path.join(path, "weights.pt")
+        config_path = os.path.join(path,"config.json")
+        torch.save(self.model.state_dict(), weights_path)
+        state = {
+            "device": self.device,
+            "seed": self.seed,
+            "epochs": self.epochs,
+            "patience": self.patience,
+            "class_labels": list(self.class_labels)
+        }
+        with open(config_path, "w") as f:
+            json.dump(state, f)
+
+
+    def load_weights(self, path:str):
+        weights_path = os.path.join(path, "weights.pt")
+        config_path = os.path.join(path,"config.json")
+        state_dict = torch.load(weights_path)
+        input_size = int(state_dict["input_size"].item())
+        n_classes = int(state_dict["n_classes"].item())
+        model = ProgramClassifierNetwork(input_size,n_classes).to(self.device)
+        model.load_state_dict(state_dict)
+        model.eval()
+        self.model = model
+        with open(config_path, "r") as f:
+            config = json.load(f)
+        config["class_labels"] = np.array(config["class_labels"]) if config["class_labels"] is not None else None
+        self.__dict__.update(config)
+
 
         
 
 
 class ProgramClassifierNetwork(nn.Module):
-    def __init__(self, input_size, n_classes) -> None:
+    def __init__(self, input_size:int, n_classes:int) -> None:
         super().__init__()
+        self.input_size = nn.Parameter(torch.Tensor([input_size]), requires_grad=False)
+        self.n_classes = nn.Parameter(torch.Tensor([n_classes]), requires_grad=False)
         self.classifier = nn.Sequential(
             nn.BatchNorm1d(input_size),
             nn.Linear(input_size, 512),
