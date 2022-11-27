@@ -14,7 +14,7 @@ import os
 
 device = "mps"
 
-def evaluate(load_weights=True):
+def evaluate(load_weights=False):
     """
     Performs basic train/test split evaluation. 
     """
@@ -66,8 +66,9 @@ def demo():
     """
     Interact with a model on the command line.
     """
-    bert_classifier = BertClassifier(weight_path="./weights/bert_classifier/bert_classifier_weights")
-
+    bert_classifier = BertClassifier(device="mps")
+    weights_path = os.path.join("weights", "bert_classifier_deployment_weights")
+    bert_classifier.load_weights(weights_path)
     while True:
         command = input("Describe your ideal major: ")
         if command.lower() == "q" or command.lower() == "quit":
@@ -80,4 +81,4 @@ def demo():
 
 
 if __name__ == "__main__":
-    evaluate(load_weights=True)
+    evaluate()
