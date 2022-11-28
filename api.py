@@ -6,10 +6,12 @@ from embeddings.bert import BertSentenceEmbedder
 from helper import get_recommendations
 import os
 from typing import List
+from flask_cors import CORS
 
 pipeline:BertClassifier
 labels:List[str]
 app= Flask(__name__)
+CORS(app, resources={r"*": {"origins": "*"}})
 
 def load_mlp_pipeline(device="cpu") -> Pipeline:
     embedder = BertSentenceEmbedder(device, padding_length=1000)
@@ -31,7 +33,7 @@ def load_mlp_pipeline(device="cpu") -> Pipeline:
 def get_major_recommendations():
     if request.method=='POST':
         posted_data = request.get_json()
-        description = posted_data['data']
+        description = posted_data['query']
         probs = pipeline.predict_proba(description)
         recommendations = get_recommendations(probs, labels, n=3)[0]
         return jsonify(list(recommendations))
