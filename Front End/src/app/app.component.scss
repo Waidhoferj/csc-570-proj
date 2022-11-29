@@ -1,0 +1,50 @@
+@use '@angular/cdk';
+@include cdk.text-field-autofill();
+
+h1 {
+    color: #f2c75c;
+    text-align: center;
+    font-weight: bold;
+}
+
+mat-toolbar {
+    background-color: #154734;
+    color: black;
+    width: 100%;
+    padding: 0 !important;
+}
+
+.navigationBar {
+    overflow: hidden;
+    background-color: #154734;
+    width: 100%;
+}
+
+.navigationBar a {
+    float: left;
+    color: #154734;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.navigationBar a:hover {
+    background-color: #f2c75c;
+    color: #154734;
+}
+
+.active {
+    background-color: #f2c75c;
+    color: #154734 !important;
+}
+
+.navigationBar a:not(:hover) {
+    color: white;
+}
+
+.content {
+    height: 75vh;
+    position: relative;
+}
