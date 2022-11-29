@@ -12,7 +12,6 @@ export class ResultComponent implements OnInit {
   getJsonValue: any;
   postJsonValue: any;
   courses: any;
-  descriptions: any;
   list: any;
 
   constructor(
@@ -24,15 +23,14 @@ export class ResultComponent implements OnInit {
     this.route.queryParams.subscribe((params: any) => {
       this.postJsonValue = params;
     })
-    // this.postMethod();
-    this.displayData();
+    this.postMethod();
+    // this.displayData();
   }
   
   postMethod() {
     this.http.post('http://127.0.0.1:5000/recommend', this.postJsonValue).subscribe((receivedData) => {
       this.getJsonValue = receivedData;
-      this.courses = Object.keys(receivedData)
-      this.descriptions = Object.values(receivedData)
+      this.courses = receivedData;
     });
     setTimeout(() => {
       this.displayData()
@@ -40,15 +38,11 @@ export class ResultComponent implements OnInit {
   }
   
   displayData() {
-    this.courses = ['Computer Science', 'Computer Engineering', 'Graphic Communication']
     this.list = document.getElementById("recommendations");
-    let i = 0
     this.courses.forEach((item: any) => {
       let li = document.createElement("li");
       li.innerText = String(item);
-      // li.innerText = this.descriptions.length > 0 ? String(item) + ' - ' + String(this.descriptions[i]) : String(item);
       this.list.appendChild(li);
-      i += 1
     });
   }
 
