@@ -4,7 +4,7 @@ This project was generated with [Angular CLI](https://github.com/angular/angular
 
 ## Local setup
 
-Install node and angular in your local
+Install node and angular in your local.
 Post installation, run `npm install` in your terminal
 
 ## Development server
