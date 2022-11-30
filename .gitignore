@@ -132,3 +132,6 @@ dmypy.json
 weights
 figures
 .DS_Store
+
+node_modules
+.angular
